@@ -220,7 +220,7 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
             alignment: _alignment[widget.stackFrom],
             child: Container(
               constraints: constraints,
-              child: widget.children[index]!.builder(SwiperPosition.None, 0)
+              child: widget.children[index].builder(SwiperPosition.None, 0)
             )
           )
         ),
@@ -240,7 +240,7 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
           angle: _angle,
           child: Container(
             constraints: constraints,
-            child: widget.children[index]!.builder(_currentItemPosition, _progress)
+            child: widget.children[index].builder(_currentItemPosition, _progress)
           ),
         ),
         onPanStart: (DragStartDetails dragStartDetails) {
