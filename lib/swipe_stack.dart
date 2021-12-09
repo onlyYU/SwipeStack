@@ -26,6 +26,7 @@ class SwipeStack extends StatefulWidget {
   final double scaleInterval;
   final Duration animationDuration;
   final int historyCount;
+  final bool crossLock;
   final void Function(int, SwiperPosition)? onSwipe;
   final void Function(int, SwiperPosition)? onRewind;
   final void Function()? onEnd;
@@ -46,6 +47,7 @@ class SwipeStack extends StatefulWidget {
     this.onEnd,
     this.onSwipe,
     this.onRewind,
+    this.crossLock = false,
     this.padding = const EdgeInsets.symmetric(vertical: 20, horizontal: 25)
   }) :
     assert(maxAngle >= 0 && maxAngle <= 360),
@@ -243,32 +245,43 @@ class SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMi
             child: widget.children[index].builder(_currentItemPosition, _progress)
           ),
         ),
-        onPanStart: (DragStartDetails dragStartDetails) {
-          RenderBox getBox = context.findRenderObject() as RenderBox;
-          var local = getBox.globalToLocal(dragStartDetails.globalPosition);
-
-          _isLeft = local.dx < getBox.size.width / 2;
-          _isTop = local.dy < getBox.size.height / 2;
-
-          double halfHeight = getBox.size.height / 2;
-          _centerSlow = ((halfHeight - local.dy) * (1 / halfHeight)).abs();
-
-        },
-        onPanUpdate: (DragUpdateDetails dragUpdateDetails) {
-          _left += dragUpdateDetails.delta.dx;
-          _top += dragUpdateDetails.delta.dy;
-
-          _progress = (100 / _baseContainerConstraints.maxWidth) * _left.abs();
-          _currentItemPosition = (_left.toInt() == 0) ? SwiperPosition.None : (_left < 0) ? SwiperPosition.Left : SwiperPosition.Right;
-          setState(() {});
-        },
-        onPanEnd: _onPandEnd
+        onPanStart: _onPanStart,
+        onPanUpdate: _onPanUpdate,
+        onPanEnd: _onPanEnd
       ),
     );
 
   }
 
-  void _onPandEnd(_) {
+  void _onPanStart(_){
+    RenderBox getBox = context.findRenderObject() as RenderBox;
+    var local = getBox.globalToLocal(_.globalPosition);
+
+    _isLeft = local.dx < getBox.size.width / 2;
+    _isTop = local.dy < getBox.size.height / 2;
+
+    double halfHeight = getBox.size.height / 2;
+    _centerSlow = ((halfHeight - local.dy) * (1 / halfHeight)).abs();
+  }
+
+  void _onPanUpdate(_){
+    if(!widget.crossLock){
+      _left += _.delta.dx;
+      _top += _.delta.dy;
+    }else{
+      if(widget.stackFrom == StackFrom.Right || widget.stackFrom == StackFrom.Left){
+        _left += _.delta.dx;
+      }else{
+        _top += _.delta.dy;
+      }
+    }
+
+    _progress = (100 / _baseContainerConstraints.maxWidth) * _left.abs();
+    _currentItemPosition = (_left.toInt() == 0) ? SwiperPosition.None : (_left < 0) ? SwiperPosition.Left : SwiperPosition.Right;
+    setState(() {});
+  }
+
+  void _onPanEnd(_) {
     setState((){});
     if (_progress < widget.threshold) {
       _goFirstPosition();
